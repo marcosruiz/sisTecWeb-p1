@@ -37,3 +37,6 @@ $RECYCLE.BIN/
 #Idea projects
 .idea/
 *.iml
+
+#This project
+out/
