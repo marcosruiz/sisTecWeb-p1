@@ -1,0 +1,39 @@
+#Rules that are going to be ignored. You can see more about
+#this file in the description.md file
+/bin/
+/build/
+/.idea/
+/.gradle/
+/.settings/
+/.classpath
+/.project
+/dist/
+/gradle/
+
+#VIM buffer files
+.*.swp
+*.iml
+*.log
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+#Idea projects
+.idea/
+*.iml
