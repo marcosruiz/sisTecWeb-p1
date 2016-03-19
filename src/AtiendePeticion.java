@@ -1,3 +1,7 @@
+/**
+ * Created by Marcos Ruiz García on 19/03/2016.
+ * NIP: 648045
+ */
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -5,48 +9,55 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
-
+import java.util.concurrent.Semaphore;
 public class AtiendePeticion implements Runnable {
     // Heads
-    protected static final String HTTP_VERSION = "HTTP/1.0";
+    private static final String HTTP_VERSION = "HTTP/1.0";
 
-    protected static final String OK = "200 OK";
-    protected static final String NOT_MODIFIED = "304 Not Modified";
-    protected static final String BAD_REQUEST = "400 Bad Request";
-    protected static final String UNAUTHORIZED = "401 Unautorized";
-    protected static final String NOT_FOUND = "404 Not Found";
-    protected static final String NOT_IMPLEMENTED = "Not Implemented";
+    private static final String OK = "200 OK";
+    private static final String NOT_MODIFIED = "304 Not Modified";
+    private static final String BAD_REQUEST = "400 Bad Request";
+    private static final String UNAUTHORIZED = "401 Unautorized";
+    private static final String NOT_FOUND = "404 Not Found";
+    private static final String NOT_IMPLEMENTED = "Not Implemented";
 
-    protected static final String CONTENT_TYPE = "Content-Type: ";
-    protected static final String CONTENT_LENGTH = "Content-Length: ";
+    private static final String CONTENT_TYPE = "Content-Type: ";
+    private static final String CONTENT_LENGTH = "Content-Length: ";
 
     // Types
-    protected static final String MIME_HTML = "text/html";
-    protected static final String MIME_TXT = "text/plain";
-    protected static final String MIME_GIF = "image/gif";
-    protected static final String MIME_JPG = "image/jpeg";
-    protected static final String MIME_PDF = "application/pdf";
-    protected static final String MIME_OTHER = "application/octet-stream";
+    private static final String MIME_HTML = "text/html";
+    private static final String MIME_TXT = "text/plain";
+    private static final String MIME_GIF = "image/gif";
+    private static final String MIME_JPG = "image/jpeg";
+    private static final String MIME_PDF = "application/pdf";
+    private static final String MIME_OTHER = "application/octet-stream";
 
     // Tags html
-    protected static final String BODY = "<body>";
-    protected static final String BODY_END = "</body>";
-    protected static final String HEAD = "<head>";
-    protected static final String HEAD_END = "</head>";
-    protected static final String HTML = "<html>";
-    protected static final String HTML_END = "</html>";
+    private static final String BODY = "<body>";
+    private static final String BODY_END = "</body>";
+    private static final String HEAD = "<head>";
+    private static final String HEAD_END = "</head>";
+    private static final String HTML = "<html>";
+    private static final String HTML_END = "</html>";
 
+    private byte[] buffer = new byte[1024];
+    private int bytes;
+    
     private Socket socket;
-    byte[] buffer = new byte[1024];
-    int bytes;
+    private static Semaphore sem;
 
-    /*
+    /**
      * Constructor
+     * @param socket
      */
-    public AtiendePeticion(Socket socket) {
+    public AtiendePeticion(Socket socket,Semaphore sem) {
 	this.socket = socket;
+	AtiendePeticion.sem = sem;
     }
-
+    
+    /**
+     * Atiende una peticion de un cliente
+     */
     @Override
     public void run() {
 	// nos aseguramos de que el fin de línea se ajuste al estandar
@@ -59,9 +70,9 @@ public class AtiendePeticion implements Runnable {
 	    String shouldBeGet = lee.next();
 	    System.out.print(shouldBeGet + " ");
 	    if (shouldBeGet.equals("GET")) {
-		// esto es el fichero
-		String rutaFichero = "." + lee.next();
-		System.out.print(rutaFichero.substring(1));
+		String nombreFichero = lee.next();
+		System.out.println(nombreFichero);
+		String rutaFichero = "." + nombreFichero;
 		File fichero = new File(rutaFichero);
 		// comprobamos si existe
 		FileInputStream fis = null;
@@ -85,13 +96,13 @@ public class AtiendePeticion implements Runnable {
 			escribe.println(CONTENT_TYPE + MIME_OTHER);
 		    }
 		    escribe.println();
+		    // enviar contenido del fichero
 		    while ((bytes = fis.read(buffer)) != -1) {
-			// enviar fichero
 			socket.getOutputStream().write(buffer, 0, bytes);
 		    }
 		    socket.getOutputStream().flush();
 		} else {
-		    // 404 not found
+		    // 404 not found: no existe el fichero que se pide
 		    escribe.println(HTTP_VERSION + " " + NOT_FOUND);
 		    escribe.println();
 		    escribe.println(HTML + BODY + "<h1>");
@@ -100,7 +111,7 @@ public class AtiendePeticion implements Runnable {
 		    escribe.println();
 		}
 	    } else {
-		// 501 not implemented
+		// 501 not implemented: no es un GET
 		escribe.println(HTTP_VERSION + " " + NOT_IMPLEMENTED);
 		escribe.println();
 		escribe.println(HTML + BODY + "<h1>");
@@ -114,7 +125,7 @@ public class AtiendePeticion implements Runnable {
 	    // TODO Auto-generated catch block
 	    e1.printStackTrace();
 	}
-
+	sem.release();
     }
 
 }
